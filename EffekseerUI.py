@@ -125,13 +125,13 @@ class EFFEKSEER_PT_particle_panel(Panel):
     COMPAT_ENGINES = {'BLENDER_EEVEE'}
 
     def draw(self, context):
-
         target= bpy.context.active_object
-        effect=STATE.getEffect(target,False)
+        settings = target.effekseer_settings
+
+        effect=STATE.getEffect(target,settings.filePath!="")
         self.layout.use_property_split = True
 
         layout = self.layout
-        settings = target.effekseer_settings
 
         row = layout.row()
         row.label(text="Effect")

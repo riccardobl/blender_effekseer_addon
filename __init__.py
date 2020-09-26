@@ -50,20 +50,16 @@ class State :
         effect.setObjRef(o)
         self.effects[uid]=effect
         o["_effekseer"]=True
+        print("Created effect for ",uid,":",effect)
         return effect
 
     def getEffect(self,o,create=False):
-        if "_effekseer" in o:
-            uid=Utils.idOf(o)
-            effect=  self.effects[uid] if uid in self.effects else None
-            if effect==None and create: effect=self.createEffect(o)
-            return effect
-        else:
-            if create:
-                effect=self.createEffect(o)
-                return effect
-            return None
-
+        uid=Utils.idOf(o)
+        effect=  self.effects[uid] if uid in self.effects else None
+        if effect==None and create: 
+            print("No effect for ",uid)
+            effect=self.createEffect(o)
+        return effect
 
 
 

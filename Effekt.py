@@ -16,11 +16,11 @@ class Effekt:
         self.scale=1.0
         self.inputs=[]
 
-    def setDynamicInput(self,i,v):
+    def setDynamicInput(self,i,v,quiet=False):
         while i>=len(self.inputs):
             self.inputs.append(0)
         self.inputs[i]=v
-        self.serialize()
+        if not quiet: self.serialize()
 
     def unsetDynamicInput(self,i):
         self.inputs.pop(i)
@@ -89,10 +89,10 @@ class Effekt:
         while True:
             k= "_effekseer_input"+str(i) 
             if  k in self.objRef:
-                self.setDynamicInput(i, float( self.objRef[k]))
+                self.setDynamicInput(i, float( self.objRef[k]),True)
+                i+=1
             else:
                 break        
-        self.serialize()
 
     def serialize(self):
         # self.objRef["_effekseer_uid"]=self.getUID()
@@ -101,6 +101,7 @@ class Effekt:
         for i in range(0,len(self.inputs)):
             k= "_effekseer_input"+str(i )
             self.objRef[k]=self.inputs[i]
+  
 
 
 
@@ -108,7 +109,7 @@ class Effekt:
         if self.reinit:
             self.reinit=False
             if self.initialized: 
-                self.stop()
+                self.stop(effectManager)
                 self.initialized=False
 
         if not self.initialized:
