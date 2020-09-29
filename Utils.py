@@ -2,8 +2,6 @@ import os
 import mathutils
 yupMatrix=mathutils.Matrix([[1 ,0, 0, 0],[0, 0 ,-1 ,0],[0, 1, 0, 0],[0, 0, 0, 1]])
 
-def fixYUp(mat):
-    return mat @ yupMatrix
 
 def getArrayFromMatrix(mat,rowMajor,limit=4):
     m=[]
@@ -84,3 +82,33 @@ def findBytes(root,path):
 
 def idOf(obj):
     return id(obj)
+
+def swizzleLoc(src):
+    t=src[1]
+    src[1]=src[2]
+    src[2]=-t
+    return src
+    
+
+def swizzleRot(src):
+    t=src[2]
+    src[2]=src[3]
+    src[3]=-t
+    return src
+    
+
+def swizzleScale(src):
+    t=src[1]
+    src[1]=src[2]
+    src[2]=t
+    return src
+
+
+def toMatrix(loc,rot,scale):
+    mat= mathutils.Matrix.Translation(loc) @ rot.to_matrix().to_4x4()
+    scaleMat = mathutils.Matrix() 
+    scaleMat[0][0] = scale[0]
+    scaleMat[1][1] = scale[1]
+    scaleMat[2][2] = scale[2]
+    mat=mat@scaleMat
+    return mat

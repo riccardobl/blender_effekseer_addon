@@ -2,6 +2,7 @@ from .EffekseerCore import *;
 from . import Utils
 import bpy
 import uuid
+import mathutils
 class Effekt:
 
     def __init__(self,uid):
@@ -10,11 +11,11 @@ class Effekt:
         self.initialized=False
         self.effect=None
         self.effectHandle=None
-        # self.uid=None
         self.uid=uid
         self.reinit=False
         self.scale=1.0
         self.inputs=[]
+        self.ignoreRotation=False
 
     def setDynamicInput(self,i,v,quiet=False):
         while i>=len(self.inputs):
@@ -31,6 +32,7 @@ class Effekt:
 
     def setScale(self,v):
         self.scale=v
+        self.serialize()
 
     def getScale(self):
         return self.scale
@@ -40,9 +42,10 @@ class Effekt:
         if objRef!=None:self.deserialize(objRef)
 
     def setPath(self,path):
-        self.path=path
-        self.serialize()
-        self.reinit=True
+        if path!=self.path:
+            self.path=path
+            self.serialize()
+            self.reinit=True
 
     def getPath(self):
         return self.path
@@ -65,26 +68,39 @@ class Effekt:
             self.effectHandle=effectManager.Play(self.effect)
 
         if exists:
-            transformMatrix=Utils.fixYUp(self.objRef.matrix_world)
+            transformMatrix=self.objRef.matrix_world
+
+            loc, rot, scale = transformMatrix.decompose()
+            scale=Utils.swizzleScale(scale)
+            loc=Utils.swizzleLoc(loc)
+            
+            scale*=self.getScale()
+
+            if  self.ignoreRotation:
+                rot=mathutils.Quaternion()
+            else:
+                rot=Utils.swizzleRot(rot)
+
+            transformMatrix =  Utils.toMatrix(loc,rot,scale)
+            
+
+
             effectManager.SetEffectTransformMatrix(self.effectHandle,*Utils.getArrayFromMatrix(transformMatrix,True,3))
-        
 
     def getHandle(self):
         return self.effectHandle
 
-    # def getUID(self):
-    #     if self.uid==None: self.uid=str(uuid.uuid4())
-    #     return self.uid
+
 
     def deserialize(self,objRef):
         self.objRef=objRef
         self.initialized=False
-        # if   "_effekseer_uid" in self.objRef:
-        #     self.uid=  self.objRef["_effekseer_uid"]
         if "_effekseer_path" in  self.objRef:
             self.path=  self.objRef["_effekseer_path"]
         if   "_effekseer_scale" in self.objRef:
             self.scale= float( self.objRef["_effekseer_scale"])
+        if "_effekseer_ignorerot" in self.objRef:
+            self.ignoreRotation=bool(self.objRef["_effekseer_ignorerot"])
         i=0
         while True:
             k= "_effekseer_input"+str(i) 
@@ -95,15 +111,16 @@ class Effekt:
                 break        
 
     def serialize(self):
-        # self.objRef["_effekseer_uid"]=self.getUID()
         self.objRef["_effekseer_path"]=self.path
         self.objRef["_effekseer_scale"]=self.scale
+        self.objRef["_effekseer_ignorerot"]=self.ignoreRotation
         for i in range(0,len(self.inputs)):
             k= "_effekseer_input"+str(i )
             self.objRef[k]=self.inputs[i]
   
-
-
+    def setIgnoreRotation(self,v):
+        self.ignoreRotation=v
+        self.serialize()
 
     def initFromRenderThread(self,effectManager):
         if self.reinit:

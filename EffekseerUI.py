@@ -30,7 +30,7 @@ def getDynamicInputs(o,effect):
 
     for i in range(0,len(inputs)):
         key="Input"+str(i)
-        inputsV[key]=bpy.props.FloatProperty(name=key, default=inputs[i],update=onUpdate)
+        inputsV[key]=bpy.props.FloatProperty(name=key, default=inputs[i],update=_onUpdate)
 
     claz = type("Dynamic Inputs", (bpy.types.PropertyGroup,), inputsV)
     DYNAMIC_PROP_CLASSES[propKey]=claz
@@ -45,22 +45,30 @@ def getDynamicInputs(o,effect):
 
 
 
-def onUpdate(self,context):
+def onUpdate(self,context,target=None):
     print("Update")
-    target= bpy.context.active_object
+    if not target: target= bpy.context.active_object
     effect=STATE.getEffect(target,True)
-    if getattr(self, "filePath", None):
+    if self and getattr(self, "filePath", None):
         effect.setPath(self.filePath)
-    if getattr(self, "scale", None):
+    if self and getattr(self, "scale", None):
         effect.setScale(self.scale)
-    i=0
-    while True:
-        v=getattr(self, "Input"+str(i), None)
-        if v!=None:
-            effect.setDynamicInput(i,v)
-            i+=1
-        else: break
+    if self and getattr(self, "ignoreRot", None):
+        effect.setIgnoreRotation(self.ignoreRot)
+
+    if self:
+        i=0
+        while True:
+            v=getattr(self, "Input"+str(i), None)
+            if v!=None:
+                effect.setDynamicInput(i,v)
+                i+=1
+            else: break
     getDynamicInputs(target,effect)
+
+
+def _onUpdate(self,context):
+    onUpdate(self,context)
 
 class EFFEKSEER_addDynInput(Operator):
     bl_idname = "effekseer.add_dyn_input"
@@ -103,17 +111,13 @@ class EFFEKSEER_deleteEffect(Operator):
 
 class EFFEKSEER_settings(bpy.types.PropertyGroup):
 
-    filePath: bpy.props.StringProperty(update=onUpdate,name="Path",
+    filePath: bpy.props.StringProperty(update=_onUpdate,name="Path",
                                         description="Effect Path",
                                         default="",
                                         maxlen=1024,
                                         subtype="FILE_PATH")
-    scale:bpy.props.FloatProperty(update=onUpdate,name="Scale",description="Effect Scale",default=1.0)
-
-
-
-
-
+    scale:bpy.props.FloatProperty(update=_onUpdate,name="Scale",description="Effect Scale",default=1.0)
+    ignoreRot:bpy.props.BoolProperty(update=_onUpdate,name="Ignore rotation",description="Ignore object rotation",default=False)
 
 
 class EFFEKSEER_PT_particle_panel(Panel):
@@ -143,9 +147,12 @@ class EFFEKSEER_PT_particle_panel(Panel):
         c.operator("effekseer.delete_effect",text="X")
         c.enabled=enabled
 
+        row = layout.row()
+        row.prop(settings, "scale")
+        row.enabled=enabled
 
         row = layout.row()
-        scale=row.prop(settings, "scale")
+        row.prop(settings, "ignoreRot")
         row.enabled=enabled
 
         row = layout.row()
@@ -172,6 +179,8 @@ class EFFEKSEER_PT_particle_panel(Panel):
             c.enabled=(len(inputs)>0)
 
 
+
+
 def register(state):
     print("Register UI")
     global STATE
@@ -183,3 +192,13 @@ def register(state):
     bpy.types.Object.effekseer_settings = bpy.props.PointerProperty(type=EFFEKSEER_settings)
     bpy.utils.register_class(EFFEKSEER_PT_particle_panel)
 
+def unregister(state):
+    print("Register UI")
+    global STATE
+    STATE=state
+    bpy.utils.unregister_class(EFFEKSEER_settings)
+    bpy.utils.unregister_class(EFFEKSEER_addDynInput)
+    bpy.utils.unregister_class(EFFEKSEER_removeDynInput)
+    bpy.utils.unregister_class(EFFEKSEER_deleteEffect)
+    bpy.types.Object.effekseer_settings = bpy.props.PointerProperty(type=EFFEKSEER_settings)
+    bpy.utils.unregister_class(EFFEKSEER_PT_particle_panel)

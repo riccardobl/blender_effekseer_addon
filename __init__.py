@@ -20,7 +20,8 @@ from .EffekseerCore import *;
 from .Effekt import *
 from . import Utils
 from . import EffekseerUI
-
+import mathutils
+from bpy.app.handlers import persistent
 class State :
     effectManager=None
     effects={}
@@ -31,7 +32,8 @@ class State :
         for o in bpy.context.scene.objects:
             load=False
             if "_effekseer" in o:
-                self.createEffect(o)
+                ef=self.createEffect(o)
+                EffekseerUI.onUpdate(None,None,o)
 
     def deleteEffect(self,o):
         uid=Utils.idOf(o)
@@ -69,12 +71,17 @@ def onDraw(state):
         EffekseerBackendCore_InitializeAsOpenGL()
         state.effectManager = EffekseerManagerCore()
         state.effectManager.Initialize(8000)        
-        # state.effect = Effekt()
-        # state.effect.setObjRef(bpy.context.scene.objects["Cube"])
-        # state.effect.setPath("/home/riccardo/Desktop/jme-effekseerNative/src/test/resources/effekts/Pierre/Flame.efkefc")
 
 
     viewMatrix=gpu.matrix.get_model_view_matrix()
+    viewMatrix=viewMatrix @ mathutils.Matrix(
+            [
+                [1 ,0, 0, 0], 
+                [0, 0 ,-1 ,0], 
+                [0, 1, 0, 0], 
+                [0, 0, 0, 1]
+            ]
+        )
     state.effectManager.SetCameraMatrix(*Utils.getArrayFromMatrix(viewMatrix ,True)  )
 
     projectionMatrix=gpu.matrix.get_projection_matrix()
@@ -101,9 +108,6 @@ def onDraw(state):
             del state.effects[key]
             break
 
-    # if delta<0:
-    # state.effect.step(state.effectManager,time)
-    # else:
 
     if delta>0:
         state.effectManager.Update(delta)
@@ -120,18 +124,30 @@ def onDraw(state):
 
 
 drawHandler=None
+state=None
+
+@persistent
+def onLoad(dummy):
+    print("Load effects from scene")
+    bpy.app.handlers.depsgraph_update_post.remove(onLoad)
+    state.loadEffectsFromScene()
+
 def register():
     print("Load Effekseer renderer")
     global drawHandler
+    global state
     state =State()
     drawHandler=bpy.types.SpaceView3D.draw_handler_add(onDraw,(state,),"WINDOW","POST_VIEW")
+    bpy.app.handlers.depsgraph_update_post.append(onLoad)
     EffekseerUI.register(state)
 
 def unregister():
     global drawHandler
+    EffekseerUI.unregister(state)
     if drawHandler!=None:
-        drawHandler=None
         bpy.types.SpaceView3D.draw_handler_remove(drawHandler,"WINDOW")
+        drawHandler=None
+    bpy.app.handlers.depsgraph_update_post.remove(onLoad)
 
 
 if __name__ == '__main__':
