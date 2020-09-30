@@ -39,10 +39,7 @@ class State :
         uid=Utils.idOf(o)
         effect=  self.effects[uid] if uid in self.effects else None
         if effect!=None : 
-            print("Delete",uid)
             effect.stop(self.effectManager)
-            del   self.effects[uid]
-            o["_effekseer"]=None
         return effect
 
 
@@ -51,7 +48,7 @@ class State :
         effect=Effekt(uid)
         effect.setObjRef(o)
         self.effects[uid]=effect
-        o["_effekseer"]=True
+        if "_effekseer" in o: o["_effekseer"]=True
         print("Created effect for ",uid,":",effect)
         return effect
 
@@ -59,10 +56,8 @@ class State :
         uid=Utils.idOf(o)
         effect=  self.effects[uid] if uid in self.effects else None
         if effect==None and create: 
-            print("No effect for ",uid)
             effect=self.createEffect(o)
         return effect
-
 
 
 
@@ -94,33 +89,50 @@ def onDraw(state):
     delta= 0.0 if state.lastTime==0.0 else time-state.lastTime
     state.lastTime=time
 
+    renderMode=False
     for key,effect in state.effects.items():
-            
+        renderMode=effect.prepareRender(state.effectManager,time,delta,renderMode)
+
+    Effekt.beginUpdate(state.effectManager,time,delta,renderMode)
+    
+    for key,effect in state.effects.items():
+        markForDelete=False
+        noObj=False
         try:
-            effect.update(
+            markForDelete=effect.update(
                 effectManager=state.effectManager,
-                wasFrameUpdated=delta!=0,
-                t=time
-            )
+                t=time,
+                delta=delta,
+                renderMode=renderMode
+            )            
         except ReferenceError:
             print(key,"removed from scene. Delete associated effect")
+            markForDelete=True
+            noObj=True
+
+        if markForDelete:
+            if not noObj: effect.getObjRef()["_effekseer"]=None
             effect.stop(state.effectManager)
-            del state.effects[key]
+            del state.effects[key]            
+            print("Delete",key)
             break
+    
+    Effekt.endUpdate(state.effectManager,time,delta,renderMode)
 
-
-    if delta>0:
-        state.effectManager.Update(delta)
-    else:
-        state.effectManager.BeginUpdate()
-        for effect in state.effects.values():
-            if effect.getHandle()!=None:
-                state.effectManager.UpdateHandleToMoveToFrame(effect.getHandle(),time)
-        state.effectManager.EndUpdate()
+    # if delta>0:
+    #     state.effectManager.Update(delta)
+    # else:
+    #     state.effectManager.BeginUpdate()
+    #     for effect in state.effects.values():
+    #         if effect.getHandle()!=None:
+    #             state.effectManager.UpdateHandleToMoveToFrame(effect.getHandle(),time)
+    #     state.effectManager.EndUpdate()
         
-
+    ov=bgl.glIsEnabled(bgl.GL_FRAMEBUFFER_SRGB)
+    if ov:bgl.glDisable(bgl.GL_FRAMEBUFFER_SRGB); 
     state.effectManager.DrawBack()
     state.effectManager.DrawFront()
+    if ov: bgl.glEnable(bgl.GL_FRAMEBUFFER_SRGB); 
 
 
 drawHandler=None

@@ -16,6 +16,13 @@ class Effekt:
         self.scale=1.0
         self.inputs=[]
         self.ignoreRotation=False
+        self.duration=0
+        self.loop=True
+        self.enabled=True
+        self.ended=False
+        self.isNew=True
+        self.lastTransformMatrix=None
+        self.markOfDeath=False
 
     def setDynamicInput(self,i,v,quiet=False):
         while i>=len(self.inputs):
@@ -54,42 +61,98 @@ class Effekt:
         return self.objRef
 
 
+    def setLoop(self,v):
+        self.loop=v
+
+    def isLoop(self):
+        return self.loop
+
+
+    def setEnabled(self,effectManager,v):
+        self.enabled=v
+        if self.getHandle():effectManager.SetShown(self.getHandle(),v)
+        self.serialize()
+    
+    def isEnabled(self):
+        return self.enabled
+        
     def stop(self,effectManager):
-        if self.effectHandle:
+        if self.effectHandle!=None:
+            effectManager.SetShown(self.getHandle(),False)
             effectManager.Stop(self.effectHandle)
+            self.markOfDeath=True
 
-    def update(self,effectManager,wasFrameUpdated,t):
+    def prepareRender(self,effectManager,time,delta,currentMode):
+        mode=False
+        if delta<=0 or self.isNew: 
+            mode=True
+
+        return currentMode or mode
+
+    def update(self,effectManager,t,delta,renderMode):
         self.initFromRenderThread(effectManager)
-
         if not self.initialized: return
-      
-        exists=self.effectHandle!=None and effectManager.Exists(self.effectHandle)
-        if not(exists) and wasFrameUpdated:
-            self.effectHandle=effectManager.Play(self.effect)
 
-        if exists:
+        visible=not self.getObjRef().hide_get()
+        if visible:
+            exists=self.effectHandle!=None and effectManager.Exists(self.effectHandle)
+            if not(exists) :
+                if delta!=0 or self.isNew:
+                    self.effectHandle=effectManager.Play(self.effect)
+                else: return
+
             transformMatrix=self.objRef.matrix_world
 
             loc, rot, scale = transformMatrix.decompose()
-            scale=Utils.swizzleScale(scale)
-            loc=Utils.swizzleLoc(loc)
+            scale=Utils.swizzleScale(scale)*self.getScale()
+            loc=Utils.swizzleLoc(loc)            
+
+            if  self.ignoreRotation:   rot=mathutils.Quaternion()
+            else:  rot=Utils.swizzleRot(rot)
+
+            transformMatrix = Utils.toMatrix(loc,rot,scale)
+
+            updatedTransform=self.lastTransformMatrix==None or transformMatrix!=self.lastTransformMatrix
+            self.lastTransformMatrix=transformMatrix
+
+            if self.isNew or updatedTransform or self.markOfDeath:
+                effectManager.SetEffectTransformBaseMatrix(self.effectHandle,*Utils.getArrayFromMatrix(transformMatrix,True,3))
+
+                self.ended=not( t<self.duration or self.isLoop())
+                if not self.ended:                     
+                    if renderMode : 
+                        # Step update
+                        tt=t%self.duration       
+                        if delta==0:  # HacK: Force update even if the effect didn't move(?)
+                            effectManager.UpdateHandleToMoveToFrame(self.getHandle(),0)
+                            effectManager.UpdateHandleToMoveToFrame(self.getHandle(),tt)
+                        else:                                
+                            effectManager.UpdateHandleToMoveToFrame(self.getHandle(),tt)
+                    else:
+                        # Normal update
+                        pass
+            self.isNew=False
+
+        if self.effectHandle!=None:
+            effectManager.SetShown(self.getHandle(),self.enabled and visible and not self.ended)
+        v= self.markOfDeath
+        self.markOfDeath=False
+        return v
+        
             
-            scale*=self.getScale()
 
-            if  self.ignoreRotation:
-                rot=mathutils.Quaternion()
-            else:
-                rot=Utils.swizzleRot(rot)
+    @staticmethod
+    def beginUpdate(effectManager,time,delta,renderMode):
+        if  renderMode: effectManager.BeginUpdate()
 
-            transformMatrix =  Utils.toMatrix(loc,rot,scale)
-            
+    @staticmethod
+    def endUpdate(effectManager,time,delta,renderMode):
+        if renderMode: effectManager.EndUpdate()
+        effectManager.Update(delta)
 
-
-            effectManager.SetEffectTransformMatrix(self.effectHandle,*Utils.getArrayFromMatrix(transformMatrix,True,3))
 
     def getHandle(self):
         return self.effectHandle
-
 
 
     def deserialize(self,objRef):
@@ -101,6 +164,9 @@ class Effekt:
             self.scale= float( self.objRef["_effekseer_scale"])
         if "_effekseer_ignorerot" in self.objRef:
             self.ignoreRotation=bool(self.objRef["_effekseer_ignorerot"])
+        if "_effekseer_enabled" in self.objRef:
+            self.enabled=bool(self.objRef["_effekseer_enabled"])
+
         i=0
         while True:
             k= "_effekseer_input"+str(i) 
@@ -113,7 +179,8 @@ class Effekt:
     def serialize(self):
         self.objRef["_effekseer_path"]=self.path
         self.objRef["_effekseer_scale"]=self.scale
-        self.objRef["_effekseer_ignorerot"]=self.ignoreRotation
+        self.objRef["_effekseer_ignorerot"]= self.ignoreRotation
+        self.objRef["_effekseer_enabled"]= self.enabled
         for i in range(0,len(self.inputs)):
             k= "_effekseer_input"+str(i )
             self.objRef[k]=self.inputs[i]
@@ -130,6 +197,7 @@ class Effekt:
                 self.initialized=False
 
         if not self.initialized:
+            self.isNew=True
             if not self.path: return
             self.initialized=True
             self.effect = self.loadEffect(self.path, 1.)
@@ -165,6 +233,8 @@ class Effekt:
             path=effectCore.GetMaterialPath(i)
             b,l=Utils.findBytes(root,path)
             effectCore.LoadMaterial(  b,l,i)        
+
+        self.duration=effectCore.GetTermMax()
 
         return effectCore           
             

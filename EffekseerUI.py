@@ -53,9 +53,10 @@ def onUpdate(self,context,target=None):
         effect.setPath(self.filePath)
     if self and getattr(self, "scale", None):
         effect.setScale(self.scale)
-    if self and getattr(self, "ignoreRot", None):
+    if self and getattr(self, "ignoreRot", None)!=None:
         effect.setIgnoreRotation(self.ignoreRot)
-
+    if self and getattr(self, "enabled", None)!=None:
+        effect.setEnabled(STATE.effectManager,self.enabled)
     if self:
         i=0
         while True:
@@ -92,7 +93,7 @@ class EFFEKSEER_removeDynInput(Operator):
         effect=STATE.getEffect(target,False)
         if effect:
             effect.unsetDynamicInput(len(effect.getDynamicInputs())-1)
-            getDynamicInputs(effect)
+            getDynamicInputs(target,effect)
         return {"FINISHED"}
 
 
@@ -118,6 +119,7 @@ class EFFEKSEER_settings(bpy.types.PropertyGroup):
                                         subtype="FILE_PATH")
     scale:bpy.props.FloatProperty(update=_onUpdate,name="Scale",description="Effect Scale",default=1.0)
     ignoreRot:bpy.props.BoolProperty(update=_onUpdate,name="Ignore rotation",description="Ignore object rotation",default=False)
+    enabled:bpy.props.BoolProperty(update=_onUpdate,name="Enabled",description="Set effect enabled",default=True)
 
 
 class EFFEKSEER_PT_particle_panel(Panel):
@@ -153,6 +155,10 @@ class EFFEKSEER_PT_particle_panel(Panel):
 
         row = layout.row()
         row.prop(settings, "ignoreRot")
+        row.enabled=enabled
+
+        row = layout.row()
+        row.prop(settings, "enabled")
         row.enabled=enabled
 
         row = layout.row()
