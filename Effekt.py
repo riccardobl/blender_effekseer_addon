@@ -77,10 +77,12 @@ class Effekt:
         return self.enabled
         
     def stop(self,effectManager):
-        if self.effectHandle!=None:
-            effectManager.SetShown(self.getHandle(),False)
-            effectManager.Stop(self.effectHandle)
-            self.markOfDeath=True
+        if not self.markOfDeath:
+            # if self.effect!=None: self.effect.delete()
+            if self.effectHandle!=None:
+                effectManager.SetShown(self.getHandle(),False)
+                effectManager.Stop(self.effectHandle)
+                self.markOfDeath=True
 
     def prepareRender(self,effectManager,time,delta,currentMode):
         mode=False
@@ -91,7 +93,12 @@ class Effekt:
 
     def update(self,effectManager,t,delta,renderMode):
         self.initFromRenderThread(effectManager)
-        if not self.initialized: return
+        if not self.initialized: 
+            print("Skip update not initialized")
+            return
+
+        if self.markOfDeath: 
+            return True
 
         visible=not self.getObjRef().hide_get()
         if visible:
@@ -99,7 +106,9 @@ class Effekt:
             if not(exists) :
                 if delta!=0 or self.isNew:
                     self.effectHandle=effectManager.Play(self.effect)
-                else: return
+                    self.isNew=True
+                else: 
+                    return
 
             transformMatrix=self.objRef.matrix_world
 
@@ -115,7 +124,7 @@ class Effekt:
             updatedTransform=self.lastTransformMatrix==None or transformMatrix!=self.lastTransformMatrix
             self.lastTransformMatrix=transformMatrix
 
-            if self.isNew or updatedTransform or self.markOfDeath:
+            if self.isNew or updatedTransform or self.markOfDeath or delta!=0:
                 effectManager.SetEffectTransformBaseMatrix(self.effectHandle,*Utils.getArrayFromMatrix(transformMatrix,True,3))
 
                 self.ended=not( t<self.duration or self.isLoop())
@@ -135,10 +144,8 @@ class Effekt:
 
         if self.effectHandle!=None:
             effectManager.SetShown(self.getHandle(),self.enabled and visible and not self.ended)
-        v= self.markOfDeath
-        self.markOfDeath=False
-        return v
-        
+   
+        return False        
             
 
     @staticmethod

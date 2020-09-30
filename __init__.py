@@ -30,8 +30,8 @@ class State :
     def loadEffectsFromScene(self):
         self.effects={}
         for o in bpy.context.scene.objects:
-            load=False
             if "_effekseer" in o:
+                print("Load effect for",o)
                 ef=self.createEffect(o)
                 EffekseerUI.onUpdate(None,None,o)
 
@@ -42,13 +42,19 @@ class State :
             effect.stop(self.effectManager)
         return effect
 
+    def clear(self):
+        for e in self.effects.values():
+            e.stop(self.effectManager)
+        self.lastTime=0
+        self.effects={}
+
 
     def createEffect(self,o):
         uid=Utils.idOf(o)
         effect=Effekt(uid)
         effect.setObjRef(o)
         self.effects[uid]=effect
-        if "_effekseer" in o: o["_effekseer"]=True
+        if not "_effekseer" in o: o["_effekseer"]=True
         print("Created effect for ",uid,":",effect)
         return effect
 
@@ -60,6 +66,12 @@ class State :
         return effect
 
 
+def onDestroy(state):
+    state.clear()
+    if state.effectManager!=None:
+        state.effectManager=None
+        # state.effectManager.delete()
+        EffekseerBackendCore_Terminate()
 
 def onDraw(state):
     if state.effectManager==None: 
@@ -119,15 +131,7 @@ def onDraw(state):
     
     Effekt.endUpdate(state.effectManager,time,delta,renderMode)
 
-    # if delta>0:
-    #     state.effectManager.Update(delta)
-    # else:
-    #     state.effectManager.BeginUpdate()
-    #     for effect in state.effects.values():
-    #         if effect.getHandle()!=None:
-    #             state.effectManager.UpdateHandleToMoveToFrame(effect.getHandle(),time)
-    #     state.effectManager.EndUpdate()
-        
+
     ov=bgl.glIsEnabled(bgl.GL_FRAMEBUFFER_SRGB)
     if ov:bgl.glDisable(bgl.GL_FRAMEBUFFER_SRGB); 
     state.effectManager.DrawBack()
@@ -141,16 +145,24 @@ state=None
 @persistent
 def onLoad(dummy):
     print("Load effects from scene")
+    onDestroy(state)
     bpy.app.handlers.depsgraph_update_post.remove(onLoad)
     state.loadEffectsFromScene()
+
+@persistent
+def loadHandler(dummy):
+    print("Load Handler:", bpy.data.filepath)
+    bpy.app.handlers.depsgraph_update_post.append(onLoad)
+
+
 
 def register():
     print("Load Effekseer renderer")
     global drawHandler
     global state
+    bpy.app.handlers.load_post.append(loadHandler)
     state =State()
     drawHandler=bpy.types.SpaceView3D.draw_handler_add(onDraw,(state,),"WINDOW","POST_VIEW")
-    bpy.app.handlers.depsgraph_update_post.append(onLoad)
     EffekseerUI.register(state)
 
 def unregister():
