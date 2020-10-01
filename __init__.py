@@ -77,7 +77,13 @@ def onDraw(state):
     if state.effectManager==None: 
         EffekseerBackendCore_InitializeAsOpenGL()
         state.effectManager = EffekseerManagerCore()
-        state.effectManager.Initialize(8000)        
+        state.effectManager.Initialize(8000,True)        
+
+    visible=False
+    for s in bpy.context.area.spaces:
+        if s.type=="VIEW_3D":
+            if s.shading.type=="MATERIAL" or s.shading.type=="RENDERED":
+                visible=True
 
 
     viewMatrix=gpu.matrix.get_model_view_matrix()
@@ -115,7 +121,8 @@ def onDraw(state):
                 effectManager=state.effectManager,
                 t=time,
                 delta=delta,
-                renderMode=renderMode
+                renderMode=renderMode,
+                visible=visible
             )            
         except ReferenceError:
             print(key,"removed from scene. Delete associated effect")
@@ -132,11 +139,11 @@ def onDraw(state):
     Effekt.endUpdate(state.effectManager,time,delta,renderMode)
 
 
-    ov=bgl.glIsEnabled(bgl.GL_FRAMEBUFFER_SRGB)
-    if ov:bgl.glDisable(bgl.GL_FRAMEBUFFER_SRGB); 
+    # ov=bgl.glIsEnabled(bgl.GL_FRAMEBUFFER_SRGB)
+    # if ov:bgl.glDisable(bgl.GL_FRAMEBUFFER_SRGB); 
     state.effectManager.DrawBack()
     state.effectManager.DrawFront()
-    if ov: bgl.glEnable(bgl.GL_FRAMEBUFFER_SRGB); 
+    # if ov: bgl.glEnable(bgl.GL_FRAMEBUFFER_SRGB); 
 
 
 drawHandler=None

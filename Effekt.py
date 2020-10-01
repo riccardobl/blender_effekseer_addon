@@ -85,13 +85,13 @@ class Effekt:
                 self.markOfDeath=True
 
     def prepareRender(self,effectManager,time,delta,currentMode):
-        mode=False
+        mode=True
         if delta<=0 or self.isNew: 
             mode=True
 
         return currentMode or mode
 
-    def update(self,effectManager,t,delta,renderMode):
+    def update(self,effectManager,t,delta,renderMode,visible):
         self.initFromRenderThread(effectManager)
         if not self.initialized: 
             print("Skip update not initialized")
@@ -100,7 +100,7 @@ class Effekt:
         if self.markOfDeath: 
             return True
 
-        visible=not self.getObjRef().hide_get()
+        visible=visible and not self.getObjRef().hide_get()
         if visible:
             exists=self.effectHandle!=None and effectManager.Exists(self.effectHandle)
             if not(exists) :
@@ -124,7 +124,7 @@ class Effekt:
             updatedTransform=self.lastTransformMatrix==None or transformMatrix!=self.lastTransformMatrix
             self.lastTransformMatrix=transformMatrix
 
-            if self.isNew or updatedTransform or self.markOfDeath or delta!=0:
+            if self.isNew or updatedTransform or delta!=0:
                 effectManager.SetEffectTransformBaseMatrix(self.effectHandle,*Utils.getArrayFromMatrix(transformMatrix,True,3))
 
                 self.ended=not( t<self.duration or self.isLoop())
@@ -133,7 +133,7 @@ class Effekt:
                         # Step update
                         tt=t%self.duration       
                         if delta==0:  # HacK: Force update even if the effect didn't move(?)
-                            effectManager.UpdateHandleToMoveToFrame(self.getHandle(),0)
+                            effectManager.UpdateHandleToMoveToFrame(self.getHandle(),tt-0.01)
                             effectManager.UpdateHandleToMoveToFrame(self.getHandle(),tt)
                         else:                                
                             effectManager.UpdateHandleToMoveToFrame(self.getHandle(),tt)
@@ -155,7 +155,7 @@ class Effekt:
     @staticmethod
     def endUpdate(effectManager,time,delta,renderMode):
         if renderMode: effectManager.EndUpdate()
-        effectManager.Update(delta)
+        # effectManager.Update(delta)
 
 
     def getHandle(self):
