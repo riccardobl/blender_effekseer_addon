@@ -157,7 +157,7 @@ def onLoad(dummy):
     state.loadEffectsFromScene()
 
 @persistent
-def loadHandler(dummy):
+def loadHandler(x):
     print("Load Handler:", bpy.data.filepath)
     bpy.app.handlers.depsgraph_update_post.append(onLoad)
 
@@ -179,7 +179,6 @@ def unregister():
         bpy.types.SpaceView3D.draw_handler_remove(drawHandler,"WINDOW")
         drawHandler=None
     bpy.app.handlers.depsgraph_update_post.remove(onLoad)
-
 
 if __name__ == '__main__':
     register()

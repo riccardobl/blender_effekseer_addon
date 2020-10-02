@@ -12,17 +12,13 @@ def getArrayFromMatrix(mat,rowMajor,limit=4):
 def normalizePath(*parts):
     path=""
 
-    for part in parts:  path+="/"+part.replace("\\", "/")
+    for part in parts:  
+        if not part.startswith("/"): part="/"+part
+        path+=part.replace("\\", "/")
     
     path=os.path.normpath(path)
     path=path.replace("\\", "/")
-        
-    sStr=0
-    while(path.startswith("../",sStr)): sStr+=3
-    path=path[sStr:]
-
-    if(path.startswith("/")):path=path[1:]
-
+    
     return path
 
 def indexOf(s,v):

@@ -4,7 +4,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper 
 from bpy.types import Operator
 from bpy.props import StringProperty
-
+import os
 from . import Utils
 
 
@@ -50,7 +50,15 @@ def onUpdate(self,context,target=None):
     if not target: target= bpy.context.active_object
     effect=STATE.getEffect(target,True)
     if self and getattr(self, "filePath", None):
-        effect.setPath(self.filePath)
+        filePath=self.filePath
+        extension = os.path.splitext(filePath)[1]
+        if extension!=".efkefc":
+            bpy.context.window_manager.popup_menu(lambda self,context:        self.layout.label(text="Can't load "+filePath+" with extension "+extension+". Only efkefc files are supported")    , title = "Can't load effect", icon = "ERROR")
+            self.filePath=""
+            return
+        relpath=bpy.path.relpath(self.filePath)
+        print("Path:",self.filePath,"relpath",relpath)
+        effect.setPath(relpath[2:])
     if self and getattr(self, "scale", None):
         effect.setScale(self.scale)
     if self and getattr(self, "ignoreRot", None)!=None:
@@ -114,7 +122,6 @@ class EFFEKSEER_settings(bpy.types.PropertyGroup):
 
     filePath: bpy.props.StringProperty(update=_onUpdate,name="Path",
                                         description="Effect Path",
-                                        default="",
                                         maxlen=1024,
                                         subtype="FILE_PATH")
     scale:bpy.props.FloatProperty(update=_onUpdate,name="Scale",description="Effect Scale",default=1.0)
