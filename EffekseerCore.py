@@ -196,6 +196,12 @@ class EffekseerEffectCore(_object):
 
     def HasMaterialLoaded(self, index):
         return _EffekseerCore.EffekseerEffectCore_HasMaterialLoaded(self, index)
+
+    def GetTermMax(self):
+        return _EffekseerCore.EffekseerEffectCore_GetTermMax(self)
+
+    def GetTermMin(self):
+        return _EffekseerCore.EffekseerEffectCore_GetTermMin(self)
 EffekseerEffectCore_swigregister = _EffekseerCore.EffekseerEffectCore_swigregister
 EffekseerEffectCore_swigregister(EffekseerEffectCore)
 
@@ -215,8 +221,8 @@ class EffekseerManagerCore(_object):
     __swig_destroy__ = _EffekseerCore.delete_EffekseerManagerCore
     __del__ = lambda self: None
 
-    def Initialize(self, *args):
-        return _EffekseerCore.EffekseerManagerCore_Initialize(self, *args)
+    def Initialize(self, spriteMaxCount, srgbMode=False, gl2=False):
+        return _EffekseerCore.EffekseerManagerCore_Initialize(self, spriteMaxCount, srgbMode, gl2)
 
     def Update(self, deltaFrames):
         return _EffekseerCore.EffekseerManagerCore_Update(self, deltaFrames)
@@ -233,6 +239,9 @@ class EffekseerManagerCore(_object):
     def Play(self, effect):
         return _EffekseerCore.EffekseerManagerCore_Play(self, effect)
 
+    def StopAllEffects(self):
+        return _EffekseerCore.EffekseerManagerCore_StopAllEffects(self)
+
     def Stop(self, handle):
         return _EffekseerCore.EffekseerManagerCore_Stop(self, handle)
 
@@ -247,6 +256,9 @@ class EffekseerManagerCore(_object):
 
     def SetEffectTransformMatrix(self, handle, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11):
         return _EffekseerCore.EffekseerManagerCore_SetEffectTransformMatrix(self, handle, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
+
+    def SetEffectTransformBaseMatrix(self, handle, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11):
+        return _EffekseerCore.EffekseerManagerCore_SetEffectTransformBaseMatrix(self, handle, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11)
 
     def DrawBack(self):
         return _EffekseerCore.EffekseerManagerCore_DrawBack(self)

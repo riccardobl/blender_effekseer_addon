@@ -93,8 +93,7 @@ class Effekt:
 
     def update(self,effectManager,t,delta,renderMode,visible):
         self.initFromRenderThread(effectManager)
-        if not self.initialized: 
-            print("Skip update not initialized")
+        if not self.initialized or self.effect==None: 
             return
 
         if self.markOfDeath: 
@@ -212,36 +211,41 @@ class Effekt:
 
  
     def loadEffect(self,path,size):
-        effectCore = EffekseerEffectCore()
+        try:
+            effectCore = EffekseerEffectCore()
 
-        root=path[0:path.rindex("/")] if Utils.indexOf(path,"/")!=-1 else ""
+            path=bpy.path.abspath(path)
+            root=path[0:path.rindex("/")] if Utils.indexOf(path,"/")!=-1 else ""
 
-        print("Load effect")
-        b,l=Utils.readBytes(path)
-        effectCore.Load(b,l,size)
-        # load textures
+            print("Load effect",path)
+            b,l=Utils.readBytes(path)
+            effectCore.Load(b,l,size)
+            # load textures
 
-        print("Load textures")
-        textureTypes=(EffekseerTextureType_Color,EffekseerTextureType_Normal,EffekseerTextureType_Distortion)
-        for t in range(3):
-            for  i in range(effectCore.GetTextureCount(textureTypes[t])):
-                path=effectCore.GetTexturePath(i,textureTypes[t])
+            print("Load textures")
+            textureTypes=(EffekseerTextureType_Color,EffekseerTextureType_Normal,EffekseerTextureType_Distortion)
+            for t in range(3):
+                for  i in range(effectCore.GetTextureCount(textureTypes[t])):
+                    path=effectCore.GetTexturePath(i,textureTypes[t])
+                    b,l=Utils.findBytes(root,path)
+                    effectCore.LoadTexture(  b,l,i,  textureTypes[t])
+                    
+            print("Load models")
+            for i in range(effectCore.GetModelCount()):
+                path=effectCore.GetModelPath(i)
                 b,l=Utils.findBytes(root,path)
-                effectCore.LoadTexture(  b,l,i,  textureTypes[t])
-                
-        print("Load models")
-        for i in range(effectCore.GetModelCount()):
-            path=effectCore.GetModelPath(i)
-            b,l=Utils.findBytes(root,path)
-            effectCore.LoadModel(  b,l,i)
+                effectCore.LoadModel(  b,l,i)
 
-        print("Load materials")
-        for i in range(effectCore.GetMaterialCount()):
-            path=effectCore.GetMaterialPath(i)
-            b,l=Utils.findBytes(root,path)
-            effectCore.LoadMaterial(  b,l,i)        
+            print("Load materials")
+            for i in range(effectCore.GetMaterialCount()):
+                path=effectCore.GetMaterialPath(i)
+                b,l=Utils.findBytes(root,path)
+                effectCore.LoadMaterial(  b,l,i)        
 
-        self.duration=effectCore.GetTermMax()
-
-        return effectCore           
+            self.duration=effectCore.GetTermMax()
+            return effectCore           
+        except Exception as e:
+            print("Can't load effect")
+            print(e)
+        return None
             

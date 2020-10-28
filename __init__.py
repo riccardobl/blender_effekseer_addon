@@ -101,6 +101,7 @@ def onDraw(state):
     state.effectManager.SetProjectionMatrix(*Utils.getArrayFromMatrix(projectionMatrix,True )  )
 
     frame=bpy.context.scene.frame_current
+    if frame==0: frame=1 #?
     time=   (float(frame )/ max(1.0, float(bpy.context.scene.render.fps)))
     time=time / (1.0/ 60.0)
     

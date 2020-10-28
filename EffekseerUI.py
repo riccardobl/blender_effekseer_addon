@@ -58,7 +58,7 @@ def onUpdate(self,context,target=None):
             return
         relpath=bpy.path.relpath(self.filePath)
         print("Path:",self.filePath,"relpath",relpath)
-        effect.setPath(relpath[2:])
+        effect.setPath(relpath)
     if self and getattr(self, "scale", None):
         effect.setScale(self.scale)
     if self and getattr(self, "ignoreRot", None)!=None:
