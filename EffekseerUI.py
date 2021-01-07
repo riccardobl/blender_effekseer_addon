@@ -56,9 +56,12 @@ def onUpdate(self,context,target=None):
             bpy.context.window_manager.popup_menu(lambda self,context:        self.layout.label(text="Can't load "+filePath+" with extension "+extension+". Only efkefc files are supported")    , title = "Can't load effect", icon = "ERROR")
             self.filePath=""
             return
-        relpath=bpy.path.relpath(self.filePath)
-        print("Path:",self.filePath,"relpath",relpath)
-        effect.setPath(relpath)
+        if self.relPaths:
+            pp=bpy.path.relpath(self.filePath)
+        else:
+            pp=self.filePath
+        print("Path:",self.filePath,"relpath",pp)
+        effect.setPath(pp)
     if self and getattr(self, "scale", None):
         effect.setScale(self.scale)
     if self and getattr(self, "ignoreRot", None)!=None:
@@ -127,6 +130,7 @@ class EFFEKSEER_settings(bpy.types.PropertyGroup):
     scale:bpy.props.FloatProperty(update=_onUpdate,name="Scale",description="Effect Scale",default=1.0)
     ignoreRot:bpy.props.BoolProperty(update=_onUpdate,name="Ignore rotation",description="Ignore object rotation",default=False)
     enabled:bpy.props.BoolProperty(update=_onUpdate,name="Enabled",description="Set effect enabled",default=True)
+    relPaths:bpy.props.BoolProperty(update=_onUpdate,name="Use relative paths",description="Use relative paths",default=True)
 
 
 class EFFEKSEER_PT_particle_panel(Panel):
@@ -146,6 +150,9 @@ class EFFEKSEER_PT_particle_panel(Panel):
 
         layout = self.layout
 
+        row = layout.row()
+        row.prop(settings, "relPaths")
+    
         row = layout.row()
         row.label(text="Effect")
         split = row.split(factor=0.8)
