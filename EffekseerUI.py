@@ -46,7 +46,6 @@ def getDynamicInputs(o,effect):
 
 
 def onUpdate(self,context,target=None):
-    print("Update")
     if not target: target= bpy.context.active_object
     effect=STATE.getEffect(target,True)
     if self and getattr(self, "filePath", None):
@@ -56,7 +55,7 @@ def onUpdate(self,context,target=None):
             bpy.context.window_manager.popup_menu(lambda self,context:        self.layout.label(text="Can't load "+filePath+" with extension "+extension+". Only efkefc files are supported")    , title = "Can't load effect", icon = "ERROR")
             self.filePath=""
             return
-        if self.relPaths:
+        if self.relPaths and  bpy.data.is_saved:
             pp=bpy.path.relpath(self.filePath)
         else:
             pp=self.filePath
@@ -130,7 +129,7 @@ class EFFEKSEER_settings(bpy.types.PropertyGroup):
     scale:bpy.props.FloatProperty(update=_onUpdate,name="Scale",description="Effect Scale",default=1.0)
     ignoreRot:bpy.props.BoolProperty(update=_onUpdate,name="Ignore rotation",description="Ignore object rotation",default=False)
     enabled:bpy.props.BoolProperty(update=_onUpdate,name="Enabled",description="Set effect enabled",default=True)
-    relPaths:bpy.props.BoolProperty(update=_onUpdate,name="Use relative paths",description="Use relative paths",default=True)
+    relPaths:bpy.props.BoolProperty(update=_onUpdate,name="Use relative paths",description="Use relative paths",default=False)
 
 
 class EFFEKSEER_PT_particle_panel(Panel):
@@ -152,6 +151,7 @@ class EFFEKSEER_PT_particle_panel(Panel):
 
         row = layout.row()
         row.prop(settings, "relPaths")
+        row.enabled=bpy.data.is_saved
     
         row = layout.row()
         row.label(text="Effect")
