@@ -14,11 +14,11 @@ The main purpose for this addon is to aid in game map design by showing effeksee
 
 The effect's properties are also stored as **Custom properties**  of the object to which the effect is attached, a custom parser can then read those properies from within the model loader in your game engine and load the effect accordingly.
 
-You can see an example implementation for [jMonkeyEngine](https://jmonkeyengine.org) in the addon [jme3-effekseerNative](https://github.com/riccardobl/jme-effekseerNative) or more specifcally here: [EffekseerUtils.java](https://github.com/riccardobl/jme-effekseerNative/blob/master/src/main/java/com/jme/effekseer/EffekseerUtils.java#L315-L350) .
+You can see an example implementation for [jMonkeyEngine](https://jmonkeyengine.org) in  [jme3-effekseerNative](https://github.com/riccardobl/jme-effekseerNative) or more specifcally here: [EffekseerUtils.java](https://github.com/riccardobl/jme-effekseerNative/blob/master/src/main/java/com/jme/effekseer/EffekseerUtils.java#L315-L350) .
 
-This is built over [this snapshot](https://github.com/riccardobl/Effekseer/tree/ForBlenderAddon) of the rapidly changing [Effekseer master branch](https://github.com/effekseer/Effekseer), you are going to need to use this specific version of the editor for the addon to work as expected. (Binaries are built on github actions and downloadable from [here](https://github.com/riccardobl/Effekseer/releases) )
+This addon is built over [this snapshot](https://github.com/riccardobl/Effekseer/tree/ForBlenderAddon) of the rapidly changing [Effekseer master branch](https://github.com/effekseer/Effekseer), you are going to need this specific version of the editor for the addon to work as expected (Binaries are built on github actions and downloadable from [here](https://github.com/riccardobl/Effekseer/releases) ).
 
-*The addon can only use efkefc files, so if you intend to load efkproj files (eg. from the Samples folder) you will need to save them as efkefc with the editor.*
+*This addon can only use efkefc files, so if you intend to load efkproj files (eg. from the Samples folder) you will need to save them as efkefc with the editor.*
 
 
 
