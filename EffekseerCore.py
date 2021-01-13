@@ -221,8 +221,8 @@ class EffekseerManagerCore(_object):
     __swig_destroy__ = _EffekseerCore.delete_EffekseerManagerCore
     __del__ = lambda self: None
 
-    def Initialize(self, spriteMaxCount, srgbMode=False, gl2=False):
-        return _EffekseerCore.EffekseerManagerCore_Initialize(self, spriteMaxCount, srgbMode, gl2)
+    def Initialize(self, spriteMaxCount, srgbMode=False):
+        return _EffekseerCore.EffekseerManagerCore_Initialize(self, spriteMaxCount, srgbMode)
 
     def Update(self, deltaFrames):
         return _EffekseerCore.EffekseerManagerCore_Update(self, deltaFrames)
