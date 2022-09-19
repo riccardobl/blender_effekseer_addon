@@ -3,8 +3,8 @@ bl_info = {
         "name": "Effekseer For Blender",
         "description": "Render effekseer on blender",
         "author": "Riccardo Balbo",
-        "version": (1, 0),
-        "blender": (2, 80, 0),
+        "version": (1, 1),
+        "blender": (3, 3, 0),
         "category" : "Render",
         "location" : "",
         "warning" : "",
@@ -75,15 +75,18 @@ def onDestroy(state):
 
 def onDraw(state):
     if state.effectManager==None: 
-        EffekseerBackendCore_InitializeAsOpenGL()
+        EffekseerBackendCore_InitializeWithOpenGL()
         state.effectManager = EffekseerManagerCore()
         state.effectManager.Initialize(8000,True)        
 
     visible=False
-    for s in bpy.context.area.spaces:
-        if s.type=="VIEW_3D":
-            if s.shading.type=="MATERIAL" or s.shading.type=="RENDERED":
-                visible=True
+    if bpy.context.area:
+        for s in bpy.context.area.spaces:
+            if s.type=="VIEW_3D":
+                if s.shading.type=="MATERIAL" or s.shading.type=="RENDERED":
+                    visible=True
+    else:
+        visible=True
 
 
     viewMatrix=gpu.matrix.get_model_view_matrix()
@@ -150,18 +153,28 @@ def onDraw(state):
 drawHandler=None
 state=None
 
+def refreshVPShading():
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for space in area.spaces: 
+                if space.type == 'VIEW_3D':
+                    shading=space.shading.type
+                    space.shading.type = 'SOLID' 
+                    space.shading.type=shading
+
 @persistent
 def onLoad(dummy):
     print("Load effects from scene")
     onDestroy(state)
     bpy.app.handlers.depsgraph_update_post.remove(onLoad)
     state.loadEffectsFromScene()
+    refreshVPShading()
 
 @persistent
 def loadHandler(x):
     print("Load Handler:", bpy.data.filepath)
     bpy.app.handlers.depsgraph_update_post.append(onLoad)
-
+    
 
 
 def register():
