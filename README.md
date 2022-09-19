@@ -8,7 +8,7 @@
 
 ## Overview
 
-This is a blender 2.8+ addon that renders effekseer effects in blender's viewport. 
+This is a blender 3.3 addon that renders effekseer effects in blender's viewport. 
 
 The main purpose for this addon is to aid in game map design by showing effekseer particles rendered in blender's Preview viewport. 
 
